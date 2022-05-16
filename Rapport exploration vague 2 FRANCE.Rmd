@@ -1,0 +1,1842 @@
+---
+title: "Exploration"
+author: "Cindy"
+output:
+  html_document:
+    toc: true
+    theme: united
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message = FALSE,echo=FALSE)
+```
+
+# PACKAGES A TELECHARGER
+
+```{r, echo=FALSE}
+
+# packages 
+
+library(ggplot2)
+library(gplots)
+library(corrplot)
+library(gridExtra)
+library(ggpubr)
+library(ggExtra)
+library(ggthemes)
+library(RColorBrewer)
+library(dplyr)
+library(haven)
+library(rstatix)
+library(kableExtra)
+library(tidyverse)
+library(tidyselect)
+library(Hmisc)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(car)
+library(dummies)
+library(lmtest)
+library(sandwich)
+```
+
+### Importation données 
+
+```{r}
+### Importation données 
+vague2_F<- read_dta("~/Mémoire La confiance dans la science/CAUCP_France_Wave2.dta")
+```
+
+
+### Sélectionner les colonnnes
+
+
+```{r}
+### Sélectionner les colonnnes
+vague2_df<-select(vague2_F,IDNWAVE, C2FRB4ST_7,C2FRPARTYID, C2FRQ7, C2FRAGER ,C2FRSEXE,C2FREDU,C2FRAREL1,C2FRLEGFUT,C2FRTRANSSC,C2FRREG,C2FREP0_0,C2FRB4ST_6,C2FRAGGLO)
+
+
+```
+
+
+
+
+```{r}
+### Renommer les colonnes 
+
+colnames(vague2_df) <- c("IDN","confiance", "parti", "sensibilité", "age", "sexe","diplome", "religion","vote","cache","region","peur","confianceg","urbanisation")
+colnames<-c("IDN","confiance", "parti", "sensibilité", "age", "sexe","diplome", "religion","vote","cache","region","peur","confianceg",
+            "urbanisation")
+names(colnames)<-c("IDN","confiance", "parti", "sensibilité", "age", "sexe","diplome", "religion","vote","cache","region","peur","confianceg",
+                   "urbanisation")
+
+```
+
+
+
+```{r}
+### Supprimer les observations 99 (NA)
+
+
+# URBANISATION
+
+vague2_df$urbanisation<-ifelse(vague2_df$urbanisation==99,NA,vague2_df$urbanisation)
+
+# CONFIANCE
+
+vague2_df$confiance<-ifelse(vague2_df$confiance==99,NA,vague2_df$confiance)
+
+# PARTIS
+
+vague2_df$parti<-ifelse(vague2_df$parti==99,NA, vague2_df$parti)
+
+# SENSIBILITE 
+
+vague2_df$sensibilité<-ifelse(vague2_df$sensibilité==99,NA,vague2_df$sensibilité)
+
+# AGE 
+vague2_df$age<-ifelse(vague2_df$age==99,NA,
+vague2_df$age)
+
+# SEXE
+
+vague2_df$sexe<-ifelse(vague2_df$sexe==99,NA,
+vague2_df$sexe)
+
+# DIPLOME
+
+vague2_df$diplome<-ifelse(vague2_df$diplome==99,NA,
+vague2_df$diplome)
+
+
+vague2_df$diplome<-ifelse(vague2_df$diplome==2,1,vague2_df$diplome)
+
+# PEUR
+vague2_df$peur<-ifelse(vague2_df$peur==99,NA,
+vague2_df$peur)
+
+# CONFIANCE DANS LE GOUVERNEMENT
+
+vague2_df$confianceg<-ifelse(vague2_df$confianceg==99,NA,
+vague2_df$confianceg)
+```
+
+```{r}
+
+# RELIGION
+vague2_df$religion<-ifelse(vague2_df$religion==99,NA, vague2_df$religion)
+
+
+# CACHE
+vague2_df$cache<-ifelse(vague2_df$cache==99,NA, vague2_df$cache)
+
+# VOTE
+vague2_df$vote<-ifelse(vague2_df$vote==99,NA, vague2_df$vote)
+
+vague2_df$vote<-ifelse(vague2_df$vote==97,NA, vague2_df$vote)
+
+vague2_df$vote<-ifelse(vague2_df$vote==98,NA, vague2_df$vote)
+
+# REGION
+
+vague2_df$region<-ifelse(vague2_df$region==99,NA,
+vague2_df$region)
+
+# RECODAGE
+## RELIGION
+vague2_df$religion<-ifelse(vague2_df$religion==2,8, vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==3,8, vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==4,8, vague2_df$religion)
+
+
+vague2_df$religion<-ifelse(vague2_df$religion==5,8, vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==6,8, vague2_df$religion)
+
+
+
+## URBANISATION
+
+vague2_df$urbanisation<-ifelse(vague2_df$urbanisation==3,2,vague2_df$urbanisation)
+
+vague2_df$urbanisation<-ifelse(vague2_df$urbanisation==4,2,vague2_df$urbanisation)
+
+vague2_df$urbanisation<-ifelse(vague2_df$urbanisation==5,2,vague2_df$urbanisation)
+
+vague2_df$urbain<-ifelse(vague2_df$urbanisation==2,1,0)
+
+```
+
+# Transformation en dummies
+
+```{r Transformation dummies}
+
+
+# La confiance dans les scientifiques
+vague2_df$confiance<- ifelse (vague2_df$confiance==1, 1,0)
+
+# Concordance
+vague2_df$concordance<-ifelse(vague2_df$parti==vague2_df$vote,1,0)
+
+# Diplôme
+vague2_df$diplome<-ifelse(vague2_df$diplome==2,1,vague2_df$diplome)
+
+# Religion
+vague2_df$sansreligion<- ifelse (vague2_df$religion==7, 1,0)
+vague2_df$catholique<- ifelse (vague2_df$religion==1, 1,0)
+vague2_df$autrereligion<- ifelse (vague2_df$religion==8, 1,0)
+
+# Diplôme
+vague2_df$nondiplome<- ifelse (vague2_df$diplome==1, 1,0)
+vague2_df$bac<- ifelse (vague2_df$diplome==3, 1,0)
+vague2_df$hautdiplome<- ifelse (vague2_df$diplome==4, 1,0)
+
+# Age
+vague2_df$individu18_34<- ifelse (vague2_df$age==1, 1,0)
+vague2_df$individu35_54<- ifelse (vague2_df$age==2, 1,0)
+vague2_df$individu55_64<- ifelse (vague2_df$age==3, 1,0)
+vague2_df$individu65<- ifelse (vague2_df$age==4, 1,0)
+
+# Sexe
+vague2_df$femme<-ifelse (vague2_df$sexe==2, 1,0)
+
+# Partis politiques
+vague2_df$LO<-ifelse (vague2_df$parti==1, 1,0)
+vague2_df$NVP<-ifelse (vague2_df$parti==2, 1,0)
+vague2_df$PCF<-ifelse (vague2_df$parti==3, 1,0)
+vague2_df$FI<-ifelse (vague2_df$parti==4, 1,0)
+vague2_df$ND<-ifelse (vague2_df$parti==5, 1,0)
+vague2_df$PS<-ifelse (vague2_df$parti==6, 1,0)
+vague2_df$PRDG<-ifelse (vague2_df$parti==7, 1,0)
+vague2_df$LV<-ifelse (vague2_df$parti==8, 1,0)
+vague2_df$Autreéco<-ifelse (vague2_df$parti==9, 1,0)
+
+vague2_df$MODEM<-ifelse (vague2_df$parti==10, 1,0)
+
+vague2_df$UDI<-ifelse (vague2_df$parti==11, 1,0)
+vague2_df$LR<-ifelse (vague2_df$parti==12, 1,0)
+vague2_df$DLF<-ifelse (vague2_df$parti==13, 1,0)
+vague2_df$RN<-ifelse (vague2_df$parti==14, 1,0)
+vague2_df$autre<-ifelse (vague2_df$parti==15, 1,0)
+
+vague2_df$LRM<-ifelse (vague2_df$parti==16, 1,0)
+
+vague2_df$Gener<-ifelse (vague2_df$parti==17, 1,0)
+
+# Régions
+vague2_df$IDF<-ifelse (vague2_df$region==11, 1,0)
+
+vague2_df$LoireVC<-ifelse (vague2_df$region==24, 1,0)
+
+vague2_df$Burgundy<-ifelse (vague2_df$region==27, 1,0)
+
+vague2_df$Normandy<-ifelse (vague2_df$region==28, 1,0)
+
+vague2_df$NPC<-ifelse (vague2_df$region==32, 1,0)
+
+vague2_df$Alsace<-ifelse (vague2_df$region==44, 1,0)
+
+vague2_df$PaysdeLoire<-ifelse (vague2_df$region==52, 1,0)
+
+vague2_df$Brittany<-ifelse (vague2_df$region==53, 1,0)
+
+vague2_df$Aquitaine<-ifelse (vague2_df$region==75, 1,0)
+
+vague2_df$Languedoc<-ifelse (vague2_df$region==76, 1,0)
+
+vague2_df$Auvergne<-ifelse (vague2_df$region==84, 1,0)
+
+vague2_df$Provence<-ifelse (vague2_df$region==93, 1,0)
+
+vague2_df$Corsica<-ifelse (vague2_df$region==94, 1,0)
+
+```
+
+```{r}
+
+# Confiance dans le gouvernement
+vague2_df$confianceg<-ifelse(vague2_df$confiance==1,1,0)
+
+# Concordance
+vague2_df$concordance<-ifelse(vague2_df$parti==vague2_df$vote,1,0) 
+```
+
+
+
+```{r}
+## religion
+vague2_df$religion<-ifelse(vague2_df$religion== 2,8,
+                           vague2_df$religion)
+
+## religion
+vague2_df$religion<-ifelse(vague2_df$religion==3,8,vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==4,8,vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==5,8,vague2_df$religion)
+
+vague2_df$religion<-ifelse(vague2_df$religion==6,8,vague2_df$religion)
+
+```
+
+```{r dummy religion}
+
+# RECODAGE 
+## Religion
+vague2_df$sansreligion<- ifelse (vague2_df$religion==7, 1,0)
+vague2_df$catholique<- ifelse (vague2_df$religion==1, 1,0)
+vague2_df$autrereligion<- ifelse (vague2_df$religion==8, 1,0)
+```
+
+
+```{r}
+
+# RECODAGE 
+## Cache
+vague2_df$cache<-ifelse(vague2_df$cache<=5, 0,1)
+```
+
+
+```{r}
+vague2_df$sensgauche<- ifelse (vague2_df$sensibilité==1:4, 1,0)
+vague2_df$sensdroit<- ifelse (vague2_df$sensibilité==6:10, 1,0)
+```
+
+
+## Statistique descriptive 
+
+### Tableau statistique vague 2
+
+
+```{r}
+
+# tableau
+stat <-get_summary_stats(vague2_df,confiance,RN,FI,LRM,sensgauche,sensdroit,catholique,sansreligion, autrereligion,individu18_34,individu35_54,individu55_64,individu65,cache,peur, concordance,bac,hautdiplome,nondiplome,sexe,IDF,urbain,
+                         show = c("mean", "sd","min", "max"))
+kable(stat, digits = 2) %>% kable_classic_2() %>% kable_styling(font_size = 15, )
+```
+
+
+
+
+
+## Analyse univariée
+
+### NB et % Hommes et de femmes
+```{r}
+table_sexe2<-table(vague2_df$sexe)
+table_sexe2
+
+prop_sexe2<- round(prop.table(table_sexe2)* 100,0)
+prop_sexe2
+
+```
+
+ Il y a 52% de femmes contre 48% d'hommes.
+ 
+ 
+ 
+
+```{r}
+# graphique des sexes 
+df_sexe<- data.frame(sexe =signif(c(966/2020,1054/2020),2),groupe = c("Homme","Femme"))
+                        
+
+
+par(mfrow=c(1,2))
+
+ggplot_sexe <- ggplot(data=df_sexe, aes(x=groupe , y=sexe)) + 
+  geom_bar(stat="identity", color="purple", fill="thistle1") + 
+  xlab("Groupe de sexe (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(sexe)), 
+            position = position_stack(vjust = .5))
+
+ggplot_sexe
+
+```
+
+### Nv et % groupes religieux
+
+```{r}
+table_religion2<-table(vague2_df$religion)
+table_religion2
+
+prop_religion2<- prop.table(table_religion2)
+prop_religion2
+
+```
+
+
+
+ 
+
+```{r}
+
+# grapgique des religions
+df_religion2<- data.frame(religion2 =round(c(1059/2018,845/2018,114/2018),2),
+                groupe2 = c( "Catholique","Sans religion", "Autre religion"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_religion2 <- ggplot(data=df_religion2, aes(x=groupe2, y=religion2)) + 
+  geom_bar(stat="identity", color="lightpink2", fill="white") + 
+  xlab("Groupe religieux (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(religion2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_religion2
+
+```
+
+La majorité sont catholiques (52%), 42% n'ont pas de religueux, 2% ont une autre religion, et 2% sont protestants.
+
+ 
+ 
+
+
+### NB et % groupes d'âges
+
+```{r}
+table_age2<-table(vague2_df$age)
+table_age2
+
+prop_age2<- round(prop.table(table_age2)* 100,0)
+prop_age2
+
+```
+
+
+
+
+```{r}
+
+# graphiques des groupes d'âge
+df_age2<- data.frame(age2 = signif(c(398/2020,612/2020,403/2020,607/2020),2),
+                 groupe2 = c("18-34 ans", 
+                            "35-54 ans", 
+                            "55-64 ans", 
+                            "65 ans et plus"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_age2 <- ggplot(data=df_age2, aes(x=groupe2 , y=age2)) + 
+  geom_bar(stat="identity", color="blue", fill="lightsteelblue1") + 
+  xlab("Groupe d'âges (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(age2)), 
+ position = position_stack(vjust = .5))
+
+ggplot_age2
+```
+
+
+
+Les tranches d'âges les plus représentés sont les 35-54 ans (30%) et les 65+ (30%). 
+
+### NB et % de diplômé 
+
+```{r}
+table_diplome2<-table(vague2_df$diplome)
+table_diplome2
+
+prop_diplome2<- round(prop.table(table_diplome2)* 100,0)
+prop_diplome2
+
+```
+
+
+
+```{r}
+# graphique sur le niveau de diplôme
+
+df_diplome2<- data.frame(diplome2 =signif(c(533/2020,488/2020,999/2020),2),groupe2 = c("Sans diplôme", "Baccalauréat","Haut diplôme"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_diplome2 <- df_diplome2 %>% mutate(groupe2 =fct_relevel(groupe2,"Sans diplôme", "Baccaularéat", "Haut diplômé")) %>% ggplot(aes(x=groupe2 , y=diplome2)) + 
+  geom_bar(stat="identity", color="forestgreen", fill="darkseagreen2") + 
+  xlab("Groupe de diplômés (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(diplome2)), 
+            position = position_stack(vjust = .5))
+
+ggplot_diplome2
+```
+
+
+
+
+Dans l'échantillon, il y a davantage de personnes ayant un haut niveau de diplôme. 49% sont très diplômés, 24% ont le baccalauréat contre 26% sans diplôme.
+
+
+
+### NB et % de personnes faisant confiance aux scientifiques 
+
+```{r}
+
+table_conf2<-table(vague2_df$confiance)
+table_conf2
+
+prop_conf2<- round(prop.table(table_conf2)* 100,0)
+prop_conf2
+
+```
+
+
+
+```{r}
+
+# graphique sur la confiance dans les scientifiques
+df_confiance2<- data.frame(confiance2 =c(366/2019,1653/2019), groupe2 = c("Ne fais pas confiance","Confiance"))
+
+par(mfrow=c(1,2))
+
+ggplot_confiance2<- ggplot(data=df_confiance2, aes(x=groupe2, y=confiance2)) + geom_bar(stat="identity", color="blue", fill="white") + xlab("Groupe de confiance dans la science(xi)")+ ylab("Fréquence (fi)") + geom_text(aes(label=scales::percent(confiance2)), position = position_stack(vjust = .5))
+
+ggplot_confiance2
+
+
+```
+
+
+Il y a 18% qui ne fait pas confiance contre 82% qui font confiance. Les individus font moins confiance que la première vague.
+
+
+
+### NB et % de personnes sur la proximité partisane
+
+```{r}
+
+table_parti2<-table(vague2_df$parti)
+table_parti2
+
+prop_parti2<- prop.table(table_parti2)*100
+prop_parti2
+```
+
+17% se sentent proche du RN et 18% se sentent proche du parti LRPM et 12% pour les républicains
+
+
+### Groupe parti politique
+
+
+```{r}
+
+# graphique sur les partis politiques
+df_parti2<- data.frame(parti2 = round(c( 5/1322,12/1322,31/1322
+                                    ,81/1322,7/1322,175/1322,
+                                    6/1322,161/1322,
+                                    13/1322,42/1322,40/1322,
+                                    196/1322,36/1322
+                                ,235/1322,20/1322,237/1322,
+                                25/1322),2),
+groupe2 = c("LO","AntiK", "PCF","FI","NV", "PS","PRG", " Les Verts","Ecologie","MoDem","L’UDI","LR","DLF","RN","Autre",
+ "LRM","Gér"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_parti2 <- ggplot(data=df_parti2, aes(x=groupe2 , y=parti2)) + 
+  geom_bar(stat="identity", color="gray8", fill="lightblue2") + 
+  xlab("Partis politiques (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(parti2)), 
+            position = position_stack(vjust = .5))
+
+ggplot_parti2
+
+```
+
+
+
+
+### Parti politique (seuil de 5%)
+
+```{r}
+
+df_parti2<- data.frame(parti2 = round(c(81/1322,175/1322,161/1322,196/1322,235/1322,237/1322),2),
+                                        groupe2 = c("FI","PS",
+                                         "LV",
+                                         "LR","RN","LRM"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_parti2 <- ggplot(data=df_parti2, aes(x=groupe2 , y=parti2)) + 
+  geom_bar(stat="identity", color="gray8", fill="lightblue2") + 
+  xlab("Partis politiques (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(parti2)), 
+            position = position_stack(vjust = .5))
+
+ggplot_parti2
+```
+La république en marche et le RN sont les deux partis les plus représentés (18%)
+
+
+
+
+
+### NB et % sensibilité politique
+
+```{r}
+table_sensibilité2<-table(vague2_df$sensibilité)
+table_sensibilité2
+
+prop_sensibilité2<- prop.table(table_sensibilité2)
+prop_sensibilité2
+
+```
+
+
+
+
+```{r}
+
+# graphique sur la sensibilité politique
+df_sensibilité_2<- data.frame(sensibilité2 =c(40/1825,51/1825,149/1825,183/1825,186/1825,474/1825,177/1825,210/1825,183/1825,84/1825,88/1825),groupe2 = c("0","1","2","3","4","5","6","7","8","9","10"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_sensibilité_2 <-df_sensibilité_2  %>% mutate(groupe2 = fct_relevel(groupe2,"0","1","2","3","4","5","6","7","8","9","10")) %>% ggplot(aes(x=groupe2 , y=sensibilité2)) + 
+  geom_bar(stat="identity", color="gray8", fill="bisque2") + 
+  xlab("échelle gauche/droite (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(sensibilité2)), 
+            position = position_stack(vjust = .5))
+
+ggplot_sensibilité_2
+```
+
+Les individus se positionnent essentiellement à 5. 
+
+### NB et % de personnes pensant que les scientifiques cachent des informations
+
+```{r}
+table_cacheD2<-table(vague2_df$cache)
+table_cacheD2
+
+prop_cacheD2<- prop.table(table_cacheD2)
+prop_cacheD2
+```
+
+```{r}
+
+# graphique sur la probabilité que les individus pensent que les scientifiques cachent des informations 
+
+df_cache_2<- data.frame(cacheD2 =c(1067/2020,953/2020),groupe2 = c("Peu probable","Très probable"))
+
+
+par(mfrow=c(1,2))
+
+ggplot_cache_2 <- ggplot(data=df_cache_2, aes(x=groupe2 , y=cacheD2)) + 
+  geom_bar(stat="identity", color="green", fill="white") + 
+  xlab("probabilité informations cachées(xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(cacheD2)), 
+            position = position_stack(vjust = .5))
+
+ggplot_cache_2
+```
+
+
+52% pensent que c'est peu probable que les scientifiques cachent  des informations tandis que 47 % pensent que c'est très probable.
+
+
+
+
+
+## Analyse bivariée 
+
+### Confiance dans les scientifiques en fonction du sexe
+
+```{r}
+
+table_sexe_conf2<-table(vague2_df$sexe,vague2_df$confiance)
+table_sexe_conf2
+
+prop_sexe_conf2<- round(prop.table(table_sexe_conf2,1)* 100,0)
+prop_sexe_conf2
+```
+
+
+
+```{r}
+balloonplot(t(table_sexe_conf2), main = "La confiance dans la science en fonction du sexe", 
+xlab = "Confiance", ylab = "Sexe", label = T, show.margins = T)
+```
+
+
+ 
+ 
+
+
+```{r}
+
+# Graphique confiance et sexe 
+df_conf_sexe2<- data.frame(confiance2 = c(778/965,875/1054),groupe2 = c("Homme","Femme"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_sexe2 <- ggplot(data=df_conf_sexe2, aes(x=groupe2 , y=confiance2)) + 
+  geom_bar(stat="identity", color="red",  fill="white") + 
+  xlab("Sexe (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_sexe2
+
+
+```
+ Les femmes font plus confiance aux scientifiques que les hommes. (comme la vague 1)
+ 
+
+
+### Méfiance dans les scientifiques en fonction du sexe
+
+```{r}
+
+df_noconf_sexe2<- data.frame(Noconfiance2 = c(187/965, 179/1054),groupe2 = c("Homme","Femme"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_noconf_sexe2 <- ggplot(data=df_noconf_sexe2, aes(x=groupe2 , y=Noconfiance2)) + 
+  geom_bar(stat="identity", color="dodgerblue2",  fill="white") + 
+  xlab("Sexe (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(Noconfiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_noconf_sexe2
+
+```
+
+Les hommes sont plus méfiants que les femmes en vers la science.
+
+
+
+
+
+### Confiance aux scientifiques en fonction de la proximité partisane
+
+```{r}
+table_conf_parti2<- table(vague2_df$parti, vague2_df$confiance)
+table_conf_parti2
+
+prop_conf_parti2<- prop.table(table_conf_parti2,1)
+prop_conf_parti2
+
+```
+
+
+
+
+```{r}
+balloonplot(t(table_conf_parti2), main = "La confiance dans la science en fonction du parti", 
+xlab = "Confiance", ylab = "parti", label = T, show.margins = T)
+```
+
+
+
+
+
+
+### Confiance dans les scientifiques en fonction du parti politique  (Rassemblement national/France Insoumise/LRM)
+
+```{r}
+
+# graphique confiance et partis politiques
+df_conf_parti2<- data.frame(confiance2= c(62/81,226/237,176/235),parti = c("France Insoumise","LRM","Rassemblement national"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_parti2 <-
+  ggplot(data=df_conf_parti2, aes(x=parti , y=confiance2,fill=parti)) + 
+  geom_bar(stat="identity") + 
+  
+  scale_fill_manual(values=c("red",
+                             "orange",
+                             "blue"))+
+
+ xlab("Parti (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_parti2
+```
+
+Les partisans du parti "Rassemblement national" ont moins confiance en la science que les partisans de la France insoumise. (idem vague 1)
+Mais les partisans de FI se rapprochent fortement du % de confiance du RN, contrairement à la vague 1 où il existait une différence. 
+
+```{r}
+df_conf_parti_extreme2<-data.frame(confiance2= c(156/175,226/237),parti2 = c("Parti socialiste","LRM"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_parti_extreme2 <- ggplot(data=df_conf_parti_extreme2, aes(x=parti2 , y=confiance2)) + 
+  geom_bar(stat="identity") +
+ 
+  xlab("Parti (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_parti_extreme2
+```
+
+Les partisans de la république en marche ont plus confiance que les partisans socialistes.(idem vague 1)
+
+
+### Confiance aux scientifiques en fonction de la sensibilité politique
+
+```{r}
+table_conf_sensibilité2<- table(vague2_df$sensibilité, vague2_df$confiance)
+table_conf_sensibilité2
+
+prop_conf_sensibilité2<- prop.table(table_conf_sensibilité2,1)
+prop_conf_sensibilité2
+```
+
+```{r}
+balloonplot(t(table_conf_sensibilité2), main = "La confiance dans la science en fonction de la sensibilité", 
+xlab = "Confiance", ylab = "sensibilité", label = T, show.margins = T)
+```
+
+
+
+
+
+```{r}
+
+# graphique confiance et sensibilité politique 
+df_conf_sensibilité2<- data.frame(confiance2=c(31/39,44/51,135/149,162/183,168/186,371/474,154/177,176/210,152/183,61/84,69/88),sensibilité2 = c("0","1","2","3","4","5","6","7","8","9","10")) 
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_sensibilité2 <- df_conf_sensibilité2 %>% mutate(sensibilité2 = fct_relevel(sensibilité2,"0","1","2","3","4","5","6","7","8","9","10")) %>% ggplot(aes(x=sensibilité2 , y=confiance2)) + 
+  geom_bar(stat="identity", color="white",  fill="pink") + 
+  xlab("Sensibilité (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_sensibilité2
+```
+<br><br>
+
+Les personnes se situant à 2 et 4 sur l'échelle (gauche) ont plus confiance (90%) que les personnes se situant à 10 (78%).
+Il y a une forte baisse entre la vague 1 et 2 pour les personnes se situant à 5 au niveau de l'échelle politique. 
+
+
+### Confiance dans les scientifiques en fonction de l'âge 
+
+```{r}
+table_age_conf2<- table(vague2_df$age,vague2_df$confiance)
+table_age_conf2
+
+prop_age_conf2<-prop.table(table_age_conf2,1)*100
+prop_age_conf2
+```
+Les 35-54 ans et les personnes ayant 65 ans et plus ont davantage confiance aux scientifiques.(vague 1)
+
+Les différents groupes d'âge sont plutôt identiques sur la confiance en la science.
+
+
+1= 18-34 
+2= 35-54
+3= 55-64
+4= 65 et plus
+
+```{r}
+balloonplot(t(table_age_conf2), main = "La confiance dans la science en fonction de l'âge", 
+xlab = "Confiance", ylab = "Age", label = T, show.margins = T)
+```
+
+
+```{r}
+
+# confiance et âge
+df_conf_age2<- data.frame(confiance2=round( c(325/397,501/612,331/403,496/601),2),age2 = c("18-34","35-54 ","55-64","65+"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_age2 <- ggplot(data=df_conf_age2, aes(x=age2 , y=confiance2)) + 
+  geom_bar(stat="identity", color="green",  fill="white") + 
+  xlab("Age (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_age2
+```
+<br><br>
+
+Le groupe d'individus ayant 65 et plus a le plus confiance en vers les scientifiques. (vague 1)
+
+Ici tous les groupes d'âge ont confiance aux scientifiques à 82% sauf les personnes ayant 65 ans et plus avec 83%.
+
+Il y a une baisse générale de la confiance dans tous les groupes d'âge. 
+
+
+### Confiance en fonction du niveau de diplôme
+
+```{r}
+table_diplome_conf2<- table(vague2_df$diplome,vague2_df$confiance)
+table_diplome_conf2
+
+prop_diplome_conf2<- prop.table(table_diplome_conf2,1)
+prop_diplome_conf2
+```
+1= Pas de diplôme
+3= Baccalauréat
+4= Haut diplôme
+
+
+```{r}
+balloonplot(t(table_diplome_conf2), main = "La confiance dans la science en fonction du niveau d'études", 
+xlab = "Confiance", ylab = "Etudes", label = T, show.margins = T)
+```
+
+
+
+
+### Confiance dans les scientifiques en fonction du niveau de diplôme
+
+```{r}
+
+# graphique diplôme et confiance
+df_conf_diplome2<- data.frame(confiance2=c(412/532,390/488,851/999), diplome2=c("Non diplômé", "Baccalauréat", "Haut diplômé"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_diplome2 <- df_conf_diplome2 %>% mutate(diplome2=
+fct_relevel(diplome2,"Non diplômé", "Baccalauréat", "Haut diplômé")) %>% ggplot(aes(x=diplome2 , y=confiance2)) + 
+  geom_bar(stat="identity", color="purple",  fill="white") + 
+  xlab("Diplôme (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_diplome2
+```
+
+
+Les plus diplômés ont plus confiance aux scientifiques. 90% des personnes ayant un haut diplôme font confiance aux scientifiques tandis que les non diplômés (1) ont confiance à 84%. (vague 1)
+
+Idem pour la vague 2, en revanche les plus diplômés font moins confiance aux scientifiques (85%).
+
+
+
+### Confiance en fonction de la religion 
+
+```{r}
+table_religion_conf2<- table(vague2_df$religion,vague2_df$confiance)
+table_religion_conf2
+
+prop_religion_conf2<- round(prop.table(table_religion_conf2,1)* 100,0)
+prop_religion_conf2
+```
+
+
+```{r}
+
+balloonplot(t(prop_religion_conf2), main = "La confiance dans la science en fonction de la religion", 
+xlab = "Confiance", ylab = "Religion", label = T, show.margins = T)
+```
+1= Catholique
+7= Sans religion
+8= Autre religion
+
+
+
+
+
+### Confiance dans les scientifiques en fonction de la religion
+
+```{r}
+
+# confiance et religion
+df_conf_religion2<- data.frame(confiance2=c(81/100,84/100,77/100),religion2 = c( "Catholique","Sans religion", "Autre religion"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_conf_religion2 <- ggplot(data=df_conf_religion2, aes(x=religion2 , y=confiance2)) + 
+  geom_bar(stat="identity", color="goldenrod",  fill="white") + 
+  xlab("Religion (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(confiance2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_conf_religion2
+```
+
+Les catholiques et les non religieux font plus confiance aux scientifiques que les personnes ayant une autre religion.(vague 1)
+
+Les protestants (85%), les non religeux (84%) et les catholiques (81%) ont plus confiance que les bouddhistes (67%).
+
+## Probabilité que les scientifiques cachent des informations en fonction du parti (proximité partisane)
+
+```{r}
+table_parti_cache2<-table(vague2_df$parti,vague2_df$cache)
+table_parti_cache2
+
+prop_parti_cache2<- round(prop.table(table_parti_cache2,1)* 100,0)
+prop_parti_cache2
+```
+
+
+```{r}
+
+# Penser que les scientifiques cachent des informations et partis politiques
+
+df_cache_parti2<- data.frame(cacheD2=c(53/100,19/237,63/100),parti2 = c("France Insoumise","LRM","RN"))
+
+
+
+par(mfrow=c(1,2))
+
+ggplot_cache_parti2 <- ggplot(data=df_cache_parti2, aes(x=parti2 , y=cacheD2,fill=parti2)) + 
+  geom_bar(stat="identity") + 
+  
+  
+  scale_fill_manual(values=c("red",
+                             "orange",
+                             "blue"))+
+  xlab("Parti (xi)")+ 
+  ylab("Fréquence (fi)") + 
+  geom_text(aes(label=scales::percent(cacheD2)), 
+  position = position_stack(vjust = .5))
+
+ggplot_cache_parti2
+```
+  63% des partisans du RN pensent qu'il est très probable que les scientifiques cachent des informations tandis que 53% des partisans de la France Insoumise affirment cela. 8% pour les partisas de LRM. On voit une forte divergence entre le parti LRM et les autres.
+  
+ça diminue pour les partisans de LRM. Alors que ça augmente énormément pour la France Insoumise (34% à 53%) et un peu pour les partisans du Rassemblement national (61 à 63%). 
+
+
+## Modèle de probabilité linéaire (LPM)
+
+### LPM Y= confiance et X= France Insoumise
+
+```{r}
+
+# création du modèle FI
+model_FI<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$sensgauche+vague2_df$sensdroit)
+
+# résumé
+summary(model_FI)
+```
+Dans notre premier modèle contenant seulement le parti politique de la France Insoumise et la sensibilité politique gauche et droite, le coefficient FI est significatif (p-value =0.01693). Le sens de l'effet est négatif (-0.09). On rejette H0: l'absence de relation. 
+
+  En moyenne, le fait de se situer à gauche de l'échelle politique fait augmenter la probabilité de confiance dans les scientifiques de 9 points de % (p-value <0.01). En revanche, le fait de se sentir à droite fait augmenter la probabilité de confiance de 5 points de % (alors qu'il le faisait baisser de 4% dans la vague 1). 
+
+
+### LPM Y= confiance et X= LRM
+
+Maintenant nous allons procéder avec un autre parti politique : La République en Marche:
+
+```{r}
+model_LRM<-lm(vague2_df$confiance ~ vague2_df$LRM+vague2_df$sensgauche+vague2_df$sensdroit)
+summary(model_LRM)
+```
+Comme pour la vague 1, le parti politique LRM a un effet positif et très significatif sur la confiance dans les scienfiques. Le fait d'être partisan de la République en Marche tout choses égales par ailleurs fait augmenter de 12 points la probabilité de confiance dans les scientifiques. 
+
+### LPM Y= confiance et X= RN
+
+```{r}
+
+# création du modèle RN
+model_RN<-lm(vague2_df$confiance~vague2_df$RN+vague2_df$sensgauche+vague2_df$sensdroit)
+
+# résumé
+summary(model_RN)
+```
+Dans notre troisième modèle nous avons seulement le parti politique du Rassemblement national et la sensibilité politique gauche et droite. Le coefficient RN est négatif et très significatif (p-valeur<0.001). On rejette HO c'est-à-dire que le B1 n'a pas d'effet significatif sur Y : la confiance. Le fait d'être partisan de la RN fait diminuer de 10 points de % la confiance dans les scientifiques. (-14 points de %  pour la vague 1)
+
+
+
+### LPM Y= confiance et X= FI + LRM + RN (3 partis)
+
+Maintenant nous allons mettre ensemble les partis politiques:
+
+```{r}
+
+# création du modèle avec les 3 partis
+model_partis<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit)
+
+# résumé
+summary(model_partis)
+```
+En intégrant les différents partis politiques, le coefficient du parti FI est toujours négatif et significatif (p-valeur <0.05), le coefficient de LRM est toujours positif (0.1) # 0.8 vague 1) et significatif (p-valeur <0.001). De même que le coefficient du RN est négatif (-0.08) et très significatif (p-valeur<0.01). La variable sur la sensibilité gauche est toujours  significative (p-value <0.01). Les partis et la sensibilité politique expliquent 3% de la variation de Y.
+
+
+### LM Y= confiance X= FI + RN + LRM + CARACTERISTIQUES INDIVIDUELLES 
+
+Maintenant que nous avons étudié la spécification de base avec nos deux variables indépendantes: le parti politique et la sensibilité politique, nous allons ajouter des variables pour contrôler la relation (proposées dans la revue de littérature) à savoir : le sexe, l'âge, la religion, la region, le sexe et le diplôme. Ces variables peuvent expliquer la variation de la confiance dans les scientifiques. 
+Cette étape permet ainsi de savoir si l'effet des partis politiques et notamment ceux du RN et du LRM sont robustes malgré l'introduction de ces variables. 
+
+Tout d'abord des caractéristiques individuelles:
+
+
+```{r}
+# création du modèle
+model_2<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+vague2_df$individu35_54+vague2_df$individu55_64+vague2_df$individu65+
+              vague2_df$hautdiplome+vague2_df$bac+vague2_df$catholique+vague2_df$autrereligion)
+
+# résumé
+summary(model_2)
+```
+Nos variables d'intérêt à savoir les partis politiques FI, RN et LRM restent  significatifS malgré l'intégration de ces variables de contrôle. Le coefficient du  FI = - 0.09 , le RN est de de -0.7 et de 0.10 pour les partisans de LRM. La sensibilité gauche reste significative (*) et celle de droite devient significative (*).
+
+
+Les variables omises comme le sexe et la religion catholique sont significatives (*) . 
+Les catholiques ont 4 points de confiance en moins que les non religieux. Les autres religions ont 3 points de confiance en moins que les non religieux.
+
+### LPM Y= confiance / dernier modèle + région
+```{r}
+
+# modèle
+model_3<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+vague2_df$individu35_54+vague2_df$individu55_64+vague2_df$individu65+ +vague2_df$hautdiplome+vague2_df$bac+vague2_df$autrereligion+vague2_df$catholique+vague2_df$IDF+vague2_df$urbain)
+
+# résumé
+summary(model_3)
+```
+
+En intégrant l'IDF les variables sur les partis politiques FI, LRM et RN restent significatifs. Les deux coefficients restent identiques. Toutes les variables de contrôle perdent leur significativité. 
+
+### LPM Y= confiance / X= région + cache
+
+```{r}
+
+# création du modèle
+model_4<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+vague2_df$individu55_64+vague2_df$individu35_54+vague2_df$individu65+ +vague2_df$bac+vague2_df$hautdiplome+vague2_df$IDF+vague2_df$urbain+ vague2_df$cache)
+
+# résumé
+summary(model_4)
+```
+
+
+L'intégration de la variable cache fait perdre la significativité de la variable FI,LRM et RN. La sensibilité gauche garde sa significativité et le sexe devient significatif (**) .La variable cache a un effet très significatif sur la confiance dans les scientifiques. L'augmentation de la probabilité que les scientifiques cachent des informations a un effet négatif et significatif sur la confiance (-0.23). La variable urbanisation est significative. Le fait que l'individu habite en zone urbaine diminue la confiance dans les scientifiques de 4 points de %. 
+Toutes ces variables expliquent 13% de la variation de la confiance dans les scientifiques. 
+
+
+## Y= confiance / modèle + PEUR + CONCORDANCE
+
+```{r}
+
+# modèle
+model_5<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+vague2_df$individu18_34+vague2_df$individu35_54+vague2_df$individu65+ +vague2_df$nondiplome+vague2_df$hautdiplome+vague2_df$catholique+vague2_df$autrereligion+vague2_df$IDF+vague2_df$urbain+ vague2_df$cache+vague2_df$concordance+vague2_df$peur)
+
+# résumé
+summary(model_5)
+```
+L'ajout d'autres variables a fait reprendre la significativité du LRM, RN , sens gauche. La variable cache est très significative.
+
+La variable traduisant la confiance dans le gouvernement a été enlevé car trop corrélé avec la confiance dans les scientifiques et la peur de la situation ont un effet très significatif sur la confiance dans la science. La peur a un effet contrairement à la première vague. 
+
+### TAB MODEL: rassemble tous les modèles
+```{r}
+tab_model(model_5, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)"))
+```
+
+
+```{r}
+# modèle de probabilité linéaire avec toutes les variables
+model_4<-lm(vague2_df$confiance~vague2_df$FI+vague2_df$LRM+vague2_df$RN+ vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+vague2_df$individu35_54+vague2_df$individu55_64 +vague2_df$individu65+ +vague2_df$bac+vague2_df$hautdiplome+vague2_df$catholique+vague2_df$autrereligion+vague2_df$IDF+vague2_df$urbain+vague2_df$cache)
+
+# résumé
+summary(model_4)
+```
+
+
+
+# Modèle PROBIT (variable dépendante binaire)
+
+## 1er test : Y (trust [0 ; 1]) = LFI + RN + LRM + SENS + ... + CACHE [0,10] PROBIT
+
+
+### FI PROBIT
+
+```{r}
+
+# création modèle probit avec FI
+
+modelp_FI<-glm(data=vague2_df,confiance~FI,family=binomial(link="probit"))
+```
+
+```{r}
+# correction HC
+coeftest(modelp_FI, vcov. = vcovHC,type = "HC1")
+```
+
+Nous utilisons la fonction prédire() pour calculer le changement
+prédit de la probabilité de confiance lorsque les individus font partis ou non de la France Insoumise. 
+
+# 1 Calculer la valeur prédite pour FI= 0, 1
+
+```{r}
+
+# prédiction passe de 0 (non partisan FI à partisan FI)
+predictions <- predict(modelp_FI,
+newdata = data.frame("FI" = c(0,1)), type = "response")
+```
+
+
+
+# 2. Calculer la différence en termes de probabilités 
+
+
+```{r}
+
+# différence de probabilités
+diff(predictions)
+```
+ Nous constatons bien que le fait d'être partisan de la FI fait baisser la probabilité de confiance d'environ 8 points. (contre 3 points à la vague 1)
+ 
+On peut faire la même chose avec les autres partis.
+
+## LRM PROBIT
+
+```{r}
+# modèle Probit LREM
+modelp_LRM<-glm(data=vague2_df,confiance~LRM,
+              family=binomial(link="probit"))
+
+# correction HC
+coeftest(modelp_LRM, vcov. = vcovHC,type = "HC1")
+
+# calcul de probabilité
+predictions1<- predict(modelp_LRM,
+newdata = data.frame("LRM" = c(0,1)), type = "response")
+
+
+
+```
+
+
+```{r}
+# différence entre les 2
+diff(predictions1)
+```
+
+Le fait d'être partisan de la LRM fait augmenter de 13 points la probabilité de confiance (11 points en vague 1). Nous retrouvons la même tendance observer avec le modèle linéaire . Ces deux résultats montrent l'effet robuste du parti politique sur la confiance dans les scientifiques.
+
+## PROBIT RN
+
+```{r}
+# création du modèle probit avec RN
+modelp_RN<-glm(data=vague2_df,confiance~RN,family=binomial(link="probit"))
+
+# correction HC
+coeftest(modelp_RN, vcov. = vcovHC,
+type = "HC1")
+
+# calcul des probabilités
+predictionsRN <- predict(modelp_RN,
+newdata = data.frame("RN" = c(0,1)), type = "response")
+
+
+# différence entre les 2
+diff(predictionsRN)
+
+```
+
+On retrouve la même tendance que le modèle c'est-à-dire que le fait d'être partisan du RN fait baisser la probabilité de confiance de 11 points %. (13 points de % en vague  1).
+
+
+Les deux coefficients FI RN et LRM sont significatifs comme dans le modèle linéaire et probits. 
+
+```{r}
+# rassemble les modèles
+tab_model(modelp_FI,modelp_LRM,modelp_RN,show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c(" Probit (FI)"," Probit (LREM)"," Probit (RN)"))
+```
+
+
+
+### MODEL PROBIT CACHE + PARTI LRM
+
+On peut rajouter la probabilité de cacher les informations:
+
+```{r}
+
+# modèle avec cacher l'information + LRM
+modelp_LRMcache<-glm(data=vague2_df,confiance~LRM+cache,family=binomial(link="probit"))
+
+# correction HC
+coeftest(modelp_LRMcache, vcov. = vcovHC,
+type = "HC1")
+
+# prédiction 
+predictions_LRMcache<-predict(modelp_LRMcache,newdata = data.frame("LRM" = c(0,1),"cache"= mean(vague2_df$cache), type ="response"))
+
+# différence des probabilités
+diff(predictions_LRMcache)
+```
+Lorsque le niveau de probabilité de penser que les scientifiques cachent des informations est le même (moyenne) et que l'on varie seulement le fait d'être partisan ou non de la LRM fait varier de 45 points de % (81 points de % en vague 1) la  probabilité de confiance dans les scientifiques. Les deux coefficients sont significatifs. Le coefficient LRM a perdu une étoile.
+
+On peut effectuer la même chose avec le RN: 
+
+
+### MODEL PROBIT CACHE + PARTI RN
+
+```{r}
+
+# modèle RN + cacher l'information
+modelp_RNcache<-glm(data=vague2_df,confiance~RN+cache,family=binomial(link="probit"))
+
+# correction
+coeftest(modelp_RNcache, vcov. = vcovHC,
+type = "HC1")
+
+# calcul des probabilités
+predictions_RNcache<-predict(modelp_RNcache,newdata = data.frame("RN" = c(0,1),"cache"= mean(vague2_df$cache), type ="response"))
+
+
+# différence entre les 2
+diff(predictions_RNcache)
+```
+Lorsque le niveau de probabilité de penser que les scientifiques cachent des informations est le même (moyenne) et que l'on varie seulement le fait d'être partisan ou non du RN fait varier de -23 points de %  (# 34 en vague 1) la probabilité de confiance dans les scientifiques. Les deux coefficients sont significatifs.
+
+### MODEL PROBIT CACHE + PARTI FI
+
+```{r}
+# modèle FI + cacher l'information
+modelp_FIcache<-glm(data=vague2_df,confiance~FI+cache,family=binomial(link="probit"))
+
+# correction
+coeftest(modelp_FIcache, vcov. = vcovHC,
+type = "HC1")
+
+# calcul des probabilités
+predictions_FIcache<-predict(modelp_FIcache,newdata = data.frame("FI" = c(0,1),"cache"= mean(vague2_df$cache), type ="response"))
+
+# différence entre les 2
+diff(predictions_FIcache)
+```
+Lorsque le niveau de probabilité de penser que les scientifiques cachent des informations est le même  et que l'on varie seulement le fait d'être partisan ou non de la FI  fait varier de -26 points de % la probabilité de confiance dans les scientifiques. Le coefficient cache est significatif.
+
+## MODEL PROBIT MULTIPLE RN
+
+```{r}
+
+
+# modèle
+probit_model_RN <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe + individu35_54 + individu55_64+ individu65 + bac + hautdiplome+ catholique + autrereligion+ IDF+cache,
+family = binomial(link = "probit"), data = vague2_df)
+
+
+# calcul des probabilités
+predictions_probit_RN<-predict(probit_model_RN,newdata = newRN, type ="response")
+
+# différence entre les 2 probabilités
+diff(predictions_probit_RN)
+```
+
+On retrouve une diminution de la probabilité de confiance lorsque l'individu est partisan du RN -1 point de % .
+
+## MODEL PROBIT MULTIPLE LRM
+
+
+```{r}
+
+# modèle 
+probit_model_LRM <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe + individu35_54 + individu55_64+ individu65 + bac + hautdiplome + catholique + autrereligion + IDF+cache+peur,
+family = binomial(link = "probit"), data = vague2_df)
+
+# calcul
+predictions_probit_LRM<-predict(probit_model_LRM,newdata = newLRM, type ="response")
+
+
+# différence de probabilités
+diff(predictions_probit_LRM)
+```
+
+On retrouve la même tendance que la vague 1 . Ici la confiance augmente de 1 point lorsque le parti = LRM. On voit une amélioration de la confiance. 
+
+
+## MODEL PROBIT MULTIPLE FI
+
+
+```{r}
+
+# modèle 
+probit_model_FI <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe + individu35_54 + individu55_64 + individu65 + bac + hautdiplome + catholique + autrereligion +cache+peur,
+family = binomial(link = "probit"), data = vague2_df)
+
+# calcul
+predictions_probit_FI<-predict(probit_model_FI,newdata = newFI, type ="response")
+
+
+# différence de probabilités
+diff(predictions_probit_FI)
+```
+
+ Ici la confiance baisse de 1 point lorsque le parti = FI. (-5% en vague 1)
+
+
+```{r}
+
+# TAB MODEL PROBIT MULTIPLE
+tab_model(probit_model_FI,probit_model_LRM, probit_model_RN,
+show.r2 = FALSE, transform = NULL,
+show.ci = FALSE, show.se = TRUE,
+vcov.fun = "vcovHC", vcov.type = "HC1",
+dv.labels = c( "Probit multiple (FI)", "Probit mutliple
+(LRM)","Probit multiple (RN)"), p.style = "stars")
+```
+
+
+# Modèle LOGIT
+
+## LOGIT MULTIPLE RN
+
+```{r}
+
+# spécification du modèle 
+newRN<-data.frame("FI"=0,
+                "LRM"= 0,
+                "RN"=c(0,1),
+                "sensgauche"=0,
+                "sensdroit"=1,
+"sexe"= 1, "individu35_54"=0 ,"individu55_64"=0, "individu65"=1,"bac"=0, "hautdiplome"=1,  "catholique"=1,"autrereligion"= 0, "IDF"=1, "urbain"=1, "cache"= mean(vague2_df$cache,"peur"=mean(vague2_df$peur)))
+```
+
+
+```{r}
+
+# modèle 
+logit_model_RN <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe +  individu35_54 + individu55_64 + individu65 + bac +hautdiplome + catholique + autrereligion + IDF + urbain + cache, peur,
+family = binomial(link = "logit"), data = vague2_df)
+
+# calcul probabilités 
+predictions_logit_model_RN<-predict(logit_model_RN,newdata=newRN,type ="response")
+
+# différence de probabilités
+diff(predictions_logit_model_RN)
+                
+```
+
+Toutes choses égales par ailleurs,(femme,individu 65 ans, sensibilité de droite,urbain,IDF,catholique,) le fait d'être partisan du RN fait baisser la probabilité de confiance de - 1 point. 
+
+## LOGIT MULTIPLE LRM
+
+On refait la même chose avec d'autres partis:
+
+```{r}
+
+# spécification 
+newLRM<-data.frame("FI"=0,
+                "LRM"= c(0,1),
+                "RN"=0,
+                "sensgauche"=0,
+                "sensdroit"=1,
+            
+"sexe"= 1, 
+"individu35_54"=0 ,"individu55_64"=0, "individu65"=1,"bac"=0, "hautdiplome"=1,"catholique"=1,"autrereligion"=0, "IDF"=1,"nondiplome"=0, "cache"= mean(vague2_df$cache), "peur"=mean(vague2_df$peur),"urbain"=1)
+
+
+# modèle
+logit_model_LRM <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe + individu35_54 +individu55_64 + individu65 + bac + hautdiplome + catholique + autrereligion + IDF +cache+peur + urbain,
+family = binomial(link = "logit"), data = vague2_df)
+
+# calcul
+predictions_logit_model_LRM<-predict(logit_model_LRM,newdata=newLRM,type ="response")
+
+# différence
+diff(predictions_logit_model_LRM)
+              
+
+```
+
+Toutes choses égales par ailleurs , le fait d'être partisan du LRM fait augmenter la confiance de 1 point.
+
+
+## MODEL MULTIPLE LOGIT FI
+
+```{r}
+# spécification 
+newFI<-data.frame("FI"=c(0,1),
+                "LRM"= 0,
+                "RN"=0,
+                "sensgauche"=0,
+                "sensdroit"=1,
+                
+"sexe"= 1, "individu35_54"=0 ,"individu55_64"=0, "individu65"=1,"bac"=0, "hautdiplome"=1,"catholique"=1,"autrereligion"=0, "IDF"=1, "cache"= mean(vague2_df$cache),"peur"=mean(vague2_df$peur))
+
+# modèle
+logit_model_FI <- glm(confiance~FI + LRM + RN + sensgauche + sensdroit + sexe + individu35_54 + individu55_64+ individu65 + bac + hautdiplome + catholique + autrereligion + IDF + cache + peur,
+family = binomial(link = "logit"), data = vague2_df)
+
+# calcul 
+predictions_logit_model_FI<-predict(logit_model_FI,newdata=newFI,type ="response")
+
+# différence
+diff(predictions_logit_model_FI)
+
+
+```
+
+Toutes choses égales par ailleurs (individus 65 ans et +, habitant en IDF, diplômé), le fait d'être partisan du FI fait baisser la confiance de moins 1 point.
+
+
+```{r}
+tab_model(logit_model_FI,logit_model_LRM,logit_model_RN,show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c(" Logit (FI)"," Logit (LREM)"," Logit (RN)"))
+```
+
+
+
+
+## 2eme test LM : Y (cache [0; 10]) = LFI + RN + LRM + SENS + ...+ TRUST [0,1]
+
+### LM CACHE FI
+
+```{r}
+# modèle
+LM_cache_FI<-lm(vague2_df$cache~vague2_df$FI)
+
+# résumé
+summary(LM_cache_FI)
+```
+Le fait d'être partisan du FI a un effet faiblement significatif  (p-value = 0.096) sur la probabilité que les scientifiques cachent des informations. 
+
+
+
+
+### LM CACHE LRM
+
+```{r}
+
+# modèle
+LM_cache_LRM<-lm(vague2_df$cache~vague2_df$LRM)
+
+
+# résumé
+summary(LM_cache_LRM)
+```
+Le fait d'être partisan de LREM a un effet très significatif sur la probabilité que les scientifiques cachent des informations. Le fait d'être partisan du LREM fait baisser -0.30 points cette idée. 
+
+
+### LM CACHE RN
+
+```{r}
+# modèle
+LM_cache_RN<-lm(vague2_df$cache~vague2_df$RN)
+
+# résumé
+summary(LM_cache_RN)
+```
+Le fait d'être partisan du RN a un effet très significatif sur la probabilité que les scientifiques cachent des informations. Le fait d'être partisan du RN fait augmenter de 0.23 points de % cette idée (1.8 en vague 1).
+
+### LM CACHE FI + RN + LREM
+
+```{r}
+
+# modèle
+LM_cache_partis<-lm(vague2_df$cache~vague2_df$FI+vague2_df$LRM+vague2_df$RN)
+
+# résumé
+summary(LM_cache_partis)
+```
+L'intégration des 3 partis politiques ne change pas la significativité de l'effet des partis RN et LRM sur la probabilité de cacher des informations. Seulemnt Fi n'est toujours pas significatif. 
+
+Le parti politique du RN augmente la probabilité que les individus pensent que les scientifiques cachent des informations (0.18). Le parti politique du LRM baisse la probabilité que les individus pensent que les scientifiques cachent des informations (-0.25). 
+
+
+
+### LM CACHE FI + RN + LREM + SENS POLITIQUE
+
+```{r}
+# modèle
+LM_cache_sens<-lm(vague2_df$cache~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$sensgauche+vague2_df$sensdroit)
+
+# résumé
+summary(LM_cache_sens)
+```
+La sensibilité politique gauche et à droite ont un effet significatif négatif sur la probabilité que les individus pensent que les scientifiques cachent des informations. Si l'individu se situe à gauche sur l'échelle politique, cela baissera cette idée (-0.11) # 0.57 en vague 1. En revanche, la sensibilité à droite fait diminuer cette idée (augmentait en vague 1) .
+
+
+
+### LM CACHE FI + RN + LREM + SENSPOLITIQUE + CARACTERISTIQUES INDIVIDUELLES (sexe ; age18,35,55; haut,nondiplome; catho,sans religion )
+
+```{r}
+
+# modèle
+LM_cache_indi<-lm(vague2_df$cache~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+ vague2_df$individu35_54+vague2_df$individu55_64+vague2_df$individu65+ vague2_df$bac+vague2_df$hautdiplome+
+vague2_df$catholique+vague2_df$autrereligion)
+
+# résumé
+summary(LM_cache_indi)
+```
+
+L'intégration d'autres variables comme l'âge, le sexe, la religion n'a pas enlever la significativité de l'effet des partis politiques sur la probabilité que les scientifiques cachent des informations. 
+Le fait d'être une femme augmente de 0.07 points cette probabilité par rapport à l'homme (p-valeur < 0.01) (comme vague 1)
+Le fait d'être haut diplômé baisse de 0.13 points cette probabilité (p-valeur < 0.01) par rapport aux non diplômés. 
+Le fait d'être catholique augmente la probabilité de penser que les scientifiques cachent des informations de 8 points de % par rapport à ceux n'ayant pas de religion. 
+
+Toutes ces variables expliquent 9% de la variation de cache. (contre 16% en vague1)
+
+### LM CACHE FI + RN + LREM + SENSPOLITIQUE + CARACTERISTIQUES INDIVIDUELLES (sexe ; age18,35,65; haut,bac; catho,autre religion ) + REGION + CONFIANCE
+
+
+```{r}
+
+# modèle
+LM_cache_tout<-lm(vague2_df$cache~vague2_df$FI+vague2_df$LRM+vague2_df$RN+vague2_df$sensgauche+vague2_df$sensdroit+vague2_df$sexe+
+                    vague2_df$individu35_54+vague2_df$individu55_64+vague2_df$individu65+
+                    vague2_df$bac+vague2_df$hautdiplome+vague2_df$catholique+
+                    vague2_df$autrereligion+vague2_df$IDF+vague2_df$urbain+vague2_df$peur+ vague2_df$confiance)
+
+# résumé
+summary(LM_cache_tout)
+```
+L'introduction de nouvelles variables (confiance, region) n'enlève pas l'effet très significatif des partis politiques. 
+La confiance a un effet très significatif sur cette idée (p-valeur < 0.001). La confiance dans les scientifiques toutes choses égales par ailleurs fait baisser de -0.42 (# 2.50 en vague 1) points la probabilité que les scientifiques cachent des informations.  
+Plus on a confiance => baisse la probabilité cache des informations . La confiance agit moins sur la probabilité que en vague 1. 
+
+
+Toutes ces variables expliquent 17% de la variation de Y. 
+
+
+```{r}
+# résumé de tous les modèles
+tab_model(LM_cache_indi,LM_cache_tout, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)","(2)"))
+```
+
+
+# Vérifier les hypothèses du modèle linéaire
+
+
+### Diagnostic 1 : Indépendance des résidus ?
+
+```{r}
+plot(LM_cache_tout,1)
+durbinWatsonTest(LM_cache_tout)
+```
+
+On peut tester statistiquement l’indépendance des résidus à l’aide du test de Durbin-Watson qui mesure si deux valeurs successives ont des résidus proches. L’indépendance des résidus est rejetée si p-value < 0.05. 
+
+Ici on trouve p-value > 0.05 (0.12) donc les résidus sont indépendants.
+
+
+### Diagnostic 2 : Normalité des résidus ?
+
+```{r}
+plot(LM_cache_tout,2)
+shapiro.test(LM_cache_tout$residuals)
+```
+On peut tester statistiquement la normalité des résidus à l’aide du test de Shapiro-Wilk. Les résidus sont normaux si p-value > 0.05. 
+
+La p-value est clairelent inférieur à 0.05 (p-value < 2.2e-16
+)donc la distribution des résidus n'est pas gausienne. 
+
+### Diagnostic 3 : Homogénéité des résidus ?
+
+L’objectif est de savoir si la variance des résidus est constante, c’est-à-dire si il s’écarte environ de la même distance tout au long de la droite . Si c’est bien le cas le graphique généré par plot devrait donner une droite horizontale. 
+
+```{r}
+plot(LM_cache_tout,3)
+ncvTest(LM_cache_tout)
+
+```
+On peut tester statistiquement l’homogénéité des résidus à l’aide du test de Breush-Pagan. L’hypothèse d’homogénéité est rejetée si la p-value est inférieure à 0.05.
+
+Ici, la p-value est supérieure à 0.05 (p = 0.42842)  donc les résidus sont homogènes.
+
+### Diagnostic 4 : Absence de valeur exceptionnelles ?
+
+L’objectif est de savoir s’il existe des valeurs qui exercent une influence exceptionnelle sur les résultats de la régression. On peut reprérer ces valeurs de plusieurs manières, notamment à l’aide de la distance de Cook générée par plot(,4).
+
+```{r}
+plot(LM_cache_tout,4)
+outlierTest(LM_cache_tout)
+```
+
+Le test statistique de Bonferroni permet de déterminer s’il existe des valeurs exceptionnelles avec une p-value < 0.05.
+
+
+Ici, on doit conclure qu’il existe au moins une valeur exceptionnelle, l'individu 632, susceptible de fausser les conclusions du modèle de régression.(0.024)
+
+
+Pour conclure: 
+- les résidus sont indépendants
+- la distribution n'est pas normale 
+- les résidus sont homogènes 
+- il existe au moins une valeur exceptionnelle (individu 632)
+
+
+
+# Modèle causal: Y= les partis politiques et X= la confiance 
+
+Est ce que le fait d'avoir confiance augmente ou baisse la probabilité d'appartenair à un parti politique ? 
+
+## Modèle avec le RN
+
+```{r}
+
+# LPM avec RN
+
+model<-lm(RN~confiance,data=vague2_df)
+
+tab_model(model, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)"))
+
+
+# modèle PROBIT
+
+modeltest<-glm(data=vague2_df,RN~confiance,family=binomial(link="probit"))
+
+# résumé
+summary(modeltest)
+
+# correction
+
+coeftest(modelp_RNcache, vcov. = vcovHC,
+type = "HC1")
+
+# calcul probabilités
+
+predictions_test<-predict(modeltest,newdata = data.frame("confiance" = c(0,1), type ="response"))
+
+# différence entre les 2 probab
+diff(predictions_test)
+
+# tableau
+tab_model(modeltest, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("Logit (1)"))
+```
+
+## Modèle avec la FI
+
+
+```{r}
+# LPM FI
+
+modelfi2<-lm(FI~confiance,data=vague2_df)
+
+## résumé
+summary(modelfi2)
+
+## tableau
+tab_model(modelfi2, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)"))
+
+
+# PROBIT
+
+modelpfi2<-glm(data=vague2_df,FI~confiance,family=binomial(link="probit"))
+
+## résumé
+summary(modelpfi2)
+
+## correction
+coeftest(modelpfi2, vcov. = vcovHC,
+type = "HC1")
+
+## calcul
+predictions_fi2<-predict(modelpfi2,newdata = data.frame("confiance" = c(0,1), type ="response"))
+
+## écart
+diff(predictions_fi2)
+
+## tableau
+tab_model(modelpfi2, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("Probit FI (1)"))
+```
+
+## Modèle causal: Le Rassemblement National
+```{r}
+# LPM RN
+
+modelRN1<-lm(RN~confiance,data=vague2_df)
+
+# résumé
+summary(modelRN1)
+
+# tableau 
+tab_model(modelRN1, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)"))
+
+
+# MODELE PROBIT
+
+modelpRN1<-glm(data=vague2_df,RN~confiance,family=binomial(link="probit"))
+
+# résumé
+
+summary(modelpRN1)
+
+# correction
+
+coeftest(modelpRN1, vcov. = vcovHC,
+type = "HC1")
+
+
+# calcul des probabilités
+predictions_RN1<-predict(modelpRN1,newdata = data.frame("confiance" = c(0,1), type ="response"))
+
+# différence entre les 2
+diff(predictions_RN1)
+
+# résumé
+tab_model(modelpRN1, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("Probit RN (1)"))
+```
+
+# Modèle avec la LREM
+```{r}
+# LPM LREM
+
+modelLRM1<-lm(LRM~confiance,data=vague2_df)
+summary(modelLRM1)
+
+# tableau
+tab_model(modelLRM1, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("(1)"))
+
+
+# modèle PROBIT
+
+modelpLRM1<-glm(data=vague2_df,RN~confiance,family=binomial(link="probit"))
+
+# résumé
+summary(modelpLRM1)
+
+
+# correction
+coeftest(modelpLRM1, vcov. = vcovHC,
+type = "HC1")
+
+
+# calcul probabilités
+predictions_LRM1<-predict(modelpLRM1,newdata = data.frame("confiance" = c(0,1), type ="response"))
+
+# différence de probabilités
+diff(predictions_LRM1)
+
+
+# tableau
+tab_model(modelpfi2,modelpRN1,modelpLRM1, show.se=TRUE, show.p=TRUE, p.style="stars", vcov.fun="vcovHC", vcov.type="HC1", dv.labels=c("Probit (RN)","Probit (FI)","Probit (LREM)"))
+```
+
